@@ -106,17 +106,17 @@ RUN set -euo pipefail && \
       -o /tmp/cni.tgz "https://github.com/containernetworking/plugins/releases/download/v${CNI_PLUGINS_VERSION}/cni-plugins-linux-${arch}-v${CNI_PLUGINS_VERSION}.tgz" && \
     tar -xz -C /opt/cni/bin -f /tmp/cni.tgz && \
     rm -f /tmp/cni.tgz && \
-    install -d /opt/kata/nydus-snapshotter /tmp/nydus-snapshotter && \
+    install -d /opt/coco/nydus-snapshotter /tmp/nydus-snapshotter && \
     curl "${curl_common[@]}" \
       -o /tmp/nydus-snapshotter.tgz "https://github.com/containerd/nydus-snapshotter/releases/download/${NYDUS_SNAPSHOTTER_VERSION}/nydus-snapshotter-${NYDUS_SNAPSHOTTER_VERSION}-linux-${arch}.tar.gz" && \
     tar -xz -C /tmp/nydus-snapshotter -f /tmp/nydus-snapshotter.tgz && \
-    install -m 0755 "$(find /tmp/nydus-snapshotter -type f -name containerd-nydus-grpc | head -n 1)" /opt/kata/nydus-snapshotter/containerd-nydus-grpc && \
-    install -m 0755 "$(find /tmp/nydus-snapshotter -type f -name nydus-overlayfs | head -n 1)" /opt/kata/nydus-snapshotter/nydus-overlayfs && \
+    install -m 0755 "$(find /tmp/nydus-snapshotter -type f -name containerd-nydus-grpc | head -n 1)" /opt/coco/nydus-snapshotter/containerd-nydus-grpc && \
+    install -m 0755 "$(find /tmp/nydus-snapshotter -type f -name nydus-overlayfs | head -n 1)" /opt/coco/nydus-snapshotter/nydus-overlayfs && \
     rm -rf /tmp/nydus-snapshotter /tmp/nydus-snapshotter.tgz
 
 RUN chmod 0755 /usr/local/bin/helm /usr/local/bin/kubeadm /usr/local/bin/kubelet /usr/local/bin/kubectl /usr/local/bin/crictl && \
     find /opt/cni/bin -type f -exec chmod 0755 {} + && \
-    chmod 0755 /opt/kata/nydus-snapshotter/containerd-nydus-grpc /opt/kata/nydus-snapshotter/nydus-overlayfs
+    chmod 0755 /opt/coco/nydus-snapshotter/containerd-nydus-grpc /opt/coco/nydus-snapshotter/nydus-overlayfs
 
 RUN install -d /opt/coco/cache/kubeadm-images \
     /opt/coco/cache/kata-deploy \
@@ -175,9 +175,7 @@ trap - EXIT
 rm -rf /run/containerd /tmp/containerd-build-preload.log /tmp/containerd-preloaded-images.txt
 EOF
 
-RUN install -d /opt/kata/share/defaults/kata-containers/runtimes/qemu-coco-dev/config.d \
-    /opt/kata/share/defaults/kata-containers/runtimes/qemu-tdx/config.d \
-    /etc/containerd/conf.d \
+RUN install -d /etc/containerd/conf.d \
     /opt/coco/config \
     /opt/coco/manifests \
     /opt/coco/prebuilt/asterinas-coco \
@@ -191,11 +189,7 @@ COPY tools/scripts /opt/coco/scripts
 COPY --from=fetch-release-assets /out/prebuilt/. /opt/coco/prebuilt/asterinas-coco/
 COPY --from=fetch-release-assets /out/metadata/. /opt/coco/metadata/
 
-RUN install -m 0644 /opt/coco/config/configuration-qemu-coco-dev-asterinas.toml \
-        /opt/kata/share/defaults/kata-containers/runtimes/qemu-coco-dev/configuration-qemu-coco-dev-asterinas.toml && \
-    install -m 0644 /opt/coco/config/configuration-qemu-tdx-asterinas.toml \
-        /opt/kata/share/defaults/kata-containers/runtimes/qemu-tdx/configuration-qemu-tdx-asterinas.toml && \
-    install -m 0644 /opt/coco/config/containerd-coco-guest-pull.toml \
+RUN install -m 0644 /opt/coco/config/containerd-coco-guest-pull.toml \
         /etc/containerd/conf.d/50-coco-guest-pull.toml && \
     install -m 0644 /opt/coco/config/confidential-containers-values.yaml \
         /opt/coco/confidential-containers-values.yaml && \

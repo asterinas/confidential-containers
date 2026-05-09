@@ -69,12 +69,6 @@ write_containerd_config() {
     local imports='"/etc/containerd/conf.d/*.toml"'
     local tmp_config
 
-    # kata-deploy creates this file during Helm install. Import it first so our
-    # /etc/containerd/conf.d/50-coco-guest-pull.toml override wins afterwards.
-    if [ -f /opt/kata/containerd/config.d/kata-deploy.toml ]; then
-        imports='"/opt/kata/containerd/config.d/kata-deploy.toml", "/etc/containerd/conf.d/*.toml"'
-    fi
-
     tmp_config="$(mktemp)"
     cat > "${tmp_config}" <<EOF
 version = 3
@@ -109,10 +103,10 @@ prepare_host_config() {
 }
 
 link_nydus_overlayfs() {
-    if [ -x /opt/kata/nydus-snapshotter/nydus-overlayfs ]; then
+    if [ -x /opt/coco/nydus-snapshotter/nydus-overlayfs ]; then
         log "linking nydus-overlayfs into PATH"
-        ln -sf /opt/kata/nydus-snapshotter/nydus-overlayfs /usr/local/bin/nydus-overlayfs
-        ln -sf /opt/kata/nydus-snapshotter/nydus-overlayfs /usr/bin/nydus-overlayfs
+        ln -sf /opt/coco/nydus-snapshotter/nydus-overlayfs /usr/local/bin/nydus-overlayfs
+        ln -sf /opt/coco/nydus-snapshotter/nydus-overlayfs /usr/bin/nydus-overlayfs
     fi
 }
 
@@ -192,10 +186,10 @@ start_containerd() {
 }
 
 start_nydus_snapshotter() {
-    if [ -x /opt/kata/nydus-snapshotter/containerd-nydus-grpc ] && \
-       ! pgrep -f '/opt/kata/nydus-snapshotter/containerd-nydus-grpc' >/dev/null 2>&1; then
+    if [ -x /opt/coco/nydus-snapshotter/containerd-nydus-grpc ] && \
+       ! pgrep -f '/opt/coco/nydus-snapshotter/containerd-nydus-grpc' >/dev/null 2>&1; then
         log "starting nydus snapshotter"
-        nohup /opt/kata/nydus-snapshotter/containerd-nydus-grpc \
+        nohup /opt/coco/nydus-snapshotter/containerd-nydus-grpc \
             --config /etc/nydus/config-proxy.toml \
             --log-to-stdout \
             >/tmp/nydus.log 2>&1 &
@@ -367,8 +361,8 @@ untaint_control_plane_node() {
 }
 
 kata_artifacts_ready() {
-    [ -x /opt/kata/nydus-snapshotter/containerd-nydus-grpc ] && \
-    [ -x /opt/kata/nydus-snapshotter/nydus-overlayfs ]
+    [ -x /opt/coco/nydus-snapshotter/containerd-nydus-grpc ] && \
+    [ -x /opt/coco/nydus-snapshotter/nydus-overlayfs ]
 }
 
 runtimeclass_ready() {
@@ -425,7 +419,7 @@ EOF
 restart_containerd_stack() {
     log "restarting containerd stack"
 
-    pkill -f '/opt/kata/nydus-snapshotter/containerd-nydus-grpc' >/dev/null 2>&1 || true
+    pkill -f '/opt/coco/nydus-snapshotter/containerd-nydus-grpc' >/dev/null 2>&1 || true
     pkill -x containerd >/dev/null 2>&1 || true
 
     for _ in $(seq 1 30); do
@@ -455,8 +449,8 @@ runtime_restart_needed() {
     if ! containerd_uses_prebuilt_shim; then
         return 0
     fi
-    if [ -x /opt/kata/nydus-snapshotter/containerd-nydus-grpc ] && \
-       ! pgrep -f '/opt/kata/nydus-snapshotter/containerd-nydus-grpc' >/dev/null 2>&1; then
+    if [ -x /opt/coco/nydus-snapshotter/containerd-nydus-grpc ] && \
+       ! pgrep -f '/opt/coco/nydus-snapshotter/containerd-nydus-grpc' >/dev/null 2>&1; then
         return 0
     fi
     return 1

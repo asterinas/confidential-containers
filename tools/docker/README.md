@@ -79,8 +79,8 @@ kubectl apply -f /opt/coco/manifests/alpine-kata-qemu-tdx.yaml
 
 The image already contains:
 
-- Kata runtime config: `/opt/kata/share/defaults/kata-containers/runtimes/qemu-coco-dev/configuration-qemu-coco-dev-asterinas.toml`
-- Kata runtime config: `/opt/kata/share/defaults/kata-containers/runtimes/qemu-tdx/configuration-qemu-tdx-asterinas.toml`
+- Kata runtime config: `/opt/coco/config/configuration-qemu-coco-dev-asterinas.toml`
+- Kata runtime config: `/opt/coco/config/configuration-qemu-tdx-asterinas.toml`
 - Containerd guest-pull config: `/etc/containerd/conf.d/50-coco-guest-pull.toml`
 - kubeadm config: `/opt/coco/kubeadm-coco-init.yaml`
 - CNI config template: `/opt/coco/10-bridge.conflist`
