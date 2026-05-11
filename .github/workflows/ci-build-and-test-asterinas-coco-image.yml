@@ -3,14 +3,10 @@ name: CI | Build And Test Asterinas CoCo Image
 on:
   pull_request:
     paths:
-      - .github/workflows/publish-asterinas-coco-image.yml
-      - .github/workflows/test-published-asterinas-coco-image.yml
       - .github/workflows/ci-build-and-test-asterinas-coco-image.yml
       - tools/**
   push:
     paths:
-      - .github/workflows/publish-asterinas-coco-image.yml
-      - .github/workflows/test-published-asterinas-coco-image.yml
       - .github/workflows/ci-build-and-test-asterinas-coco-image.yml
       - tools/**
   workflow_dispatch:
