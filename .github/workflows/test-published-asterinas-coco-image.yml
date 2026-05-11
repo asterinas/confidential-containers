@@ -1,6 +1,14 @@
 name: Test | Published Asterinas CoCo Image
 
 on:
+  pull_request:
+    paths:
+      - .github/workflows/test-published-asterinas-coco-image.yml
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/test-published-asterinas-coco-image.yml
   schedule:
     - cron: "10 0 * * *"
   workflow_dispatch:
