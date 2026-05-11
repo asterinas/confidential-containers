@@ -6,6 +6,8 @@ on:
       - .github/workflows/ci-build-and-test-asterinas-coco-image.yml
       - tools/**
   push:
+    branches:
+      - main
     paths:
       - .github/workflows/ci-build-and-test-asterinas-coco-image.yml
       - tools/**
