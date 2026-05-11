@@ -124,6 +124,13 @@ jobs:
         run: |
           set -euo pipefail
 
+          kernel_path="/root/asterinas/target/osdk/aster-kernel-osdk-bin.qemu_elf"
+          guest_cmdline="$(
+            docker exec coco-dev kubectl exec alpine-kata-qemu-coco-dev -- cat /proc/cmdline
+          )"
+          echo "Guest cmdline: ${guest_cmdline}"
+          printf '%s\n' "${guest_cmdline}" | grep -Fq "${kernel_path}"
+
           alpine_release_raw="$(
             docker exec coco-dev kubectl exec alpine-kata-qemu-coco-dev -- cat /etc/alpine-release
           )"
