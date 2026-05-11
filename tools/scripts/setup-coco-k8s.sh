@@ -97,8 +97,8 @@ prepare_host_config() {
     mount_tmpfs_once /var/lib/containerd/tmpmounts 512m
     mount_tmpfs_once /var/lib/containerd-nydus 512m
 
-    install -m 0644 "${COCO_ROOT}/nydus-config-proxy.toml" /etc/nydus/config-proxy.toml
-    install -m 0644 "${COCO_ROOT}/10-bridge.conflist" /etc/cni/net.d/10-bridge.conflist
+    install -m 0644 "${COCO_ROOT}/config/nydus/config-proxy.toml" /etc/nydus/config-proxy.toml
+    install -m 0644 "${COCO_ROOT}/config/cni/10-bridge.conflist" /etc/cni/net.d/10-bridge.conflist
     write_containerd_config
 }
 
@@ -277,7 +277,7 @@ start_kubelet() {
 }
 
 write_kubeadm_config() {
-    local template="${COCO_ROOT}/kubeadm-coco-init.yaml"
+    local template="${COCO_ROOT}/config/kubeadm/coco-init.yaml"
 
     if [ ! -f "${template}" ]; then
         echo "missing kubeadm config template: ${template}" >&2
