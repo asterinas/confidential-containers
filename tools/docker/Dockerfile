@@ -149,7 +149,7 @@ ctr -n k8s.io images ls | tee /tmp/containerd-preloaded-images.txt
 kill "${containerd_pid}" >/dev/null 2>&1 || true
 wait "${containerd_pid}" 2>/dev/null || true
 trap - EXIT
-rm -rf /run/containerd /tmp/containerd-build-preload.log /tmp/containerd-preloaded-images.txt
+rm -rf /run/containerd /opt/containerd /tmp/containerd-build-preload.log /tmp/containerd-preloaded-images.txt
 EOF
 
 RUN install -d /etc/containerd/conf.d \
@@ -166,11 +166,8 @@ COPY tools/scripts /opt/coco/scripts
 COPY --from=fetch-release-assets /out/prebuilt/. /opt/coco/prebuilt/asterinas-coco/
 COPY --from=fetch-release-assets /out/metadata/. /opt/coco/metadata/
 
-RUN install -m 0644 /opt/coco/config/containerd-coco-guest-pull.toml \
+RUN install -m 0644 /opt/coco/config/containerd/coco.toml \
         /etc/containerd/conf.d/50-coco-guest-pull.toml && \
-    install -m 0644 /opt/coco/config/kubeadm-coco-init.yaml /opt/coco/kubeadm-coco-init.yaml && \
-    install -m 0644 /opt/coco/config/10-bridge.conflist /opt/coco/10-bridge.conflist && \
-    install -m 0644 /opt/coco/config/nydus-config-proxy.toml /opt/coco/nydus-config-proxy.toml && \
     chmod 0755 /opt/coco/scripts/*.sh && \
     ln -sf /opt/coco/scripts/setup-coco-k8s.sh /opt/coco/setup-coco-k8s.sh && \
     chmod 0755 \

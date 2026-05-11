@@ -82,9 +82,9 @@ The image already contains:
 - Kata runtime config: `/opt/coco/config/configuration-qemu-coco-dev-asterinas.toml`
 - Kata runtime config: `/opt/coco/config/configuration-qemu-tdx-asterinas.toml`
 - Containerd guest-pull config: `/etc/containerd/conf.d/50-coco-guest-pull.toml`
-- kubeadm config: `/opt/coco/kubeadm-coco-init.yaml`
-- CNI config template: `/opt/coco/10-bridge.conflist`
-- nydus config: `/opt/coco/nydus-config-proxy.toml`
+- kubeadm config: `/opt/coco/config/kubeadm/coco-init.yaml`
+- CNI config template: `/opt/coco/config/cni/10-bridge.conflist`
+- nydus config: `/opt/coco/config/nydus/config-proxy.toml`
 - Prebuilt OCI archives for kubeadm images under `/opt/coco/cache/`
 - Preloaded kubeadm image records and native snapshots under `/var/lib/containerd`
 - Prebuilt Asterinas kernel/shim/initrd artifacts under `/opt/coco/prebuilt/asterinas-coco`
