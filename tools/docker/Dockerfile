@@ -73,8 +73,7 @@ RUN apt update && apt-get install -y --no-install-recommends \
     iptables \
     kmod \
     skopeo \
-    socat \
-    virtiofsd && \
+    socat && \
     apt clean && rm -rf /var/lib/apt/lists/*
 
 RUN install -d /usr/local/bin /opt/cni/bin
