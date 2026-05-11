@@ -6,10 +6,13 @@ on:
       - .github/workflows/publish-asterinas-coco-image.yml
       - .github/workflows/test-published-asterinas-coco-image.yml
       - .github/workflows/ci-build-and-test-asterinas-coco-image.yml
-      - tools/docker/**
-      - tools/packaging/**
-      - tools/scripts/**
-      - VERSION
+      - tools/**
+  push:
+    paths:
+      - .github/workflows/publish-asterinas-coco-image.yml
+      - .github/workflows/test-published-asterinas-coco-image.yml
+      - .github/workflows/ci-build-and-test-asterinas-coco-image.yml
+      - tools/**
   workflow_dispatch:
     inputs:
       build_local_release:
@@ -46,10 +49,21 @@ jobs:
             changed_files="$(
               git diff --name-only "${BASE_SHA}" "${HEAD_SHA}"
             )"
-            if printf '%s\n' "${changed_files}" | grep -Eq '^(VERSION|tools/packaging/|tools/scripts/asterinas-coco-defaults\.sh)'; then
-              should_build_local_release=true
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            if git cat-file -e "${{ github.event.before }}^{commit}" 2>/dev/null; then
+              changed_files="$(
+                git diff --name-only "${{ github.event.before }}" "${{ github.sha }}"
+              )"
+            else
+              changed_files="$(
+                git diff-tree --no-commit-id --name-only -r "${{ github.sha }}"
+              )"
             fi
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${WORKFLOW_BUILD_LOCAL_RELEASE}" = "true" ]; then
+            should_build_local_release=true
+          fi
+
+          if printf '%s\n' "${changed_files:-}" | grep -Eq '^tools/packaging/'; then
             should_build_local_release=true
           fi
 
