@@ -32,7 +32,6 @@ jobs:
       - name: Resolve Image
         id: resolve
         env:
-          GH_TOKEN: ${{ github.token }}
           WORKFLOW_IMAGE: ${{ inputs.image }}
         shell: bash
         run: |
@@ -42,11 +41,7 @@ jobs:
           if [ -n "${WORKFLOW_IMAGE}" ]; then
             image="${WORKFLOW_IMAGE}"
           else
-            docker_image_version="$(
-              gh api repos/asterinas/asterinas/contents/DOCKER_IMAGE_VERSION?ref=main --jq .content |
-                base64 -d | tr -d '\n'
-            )"
-            image="${IMAGE_REPOSITORY}:${docker_image_version}"
+            image="${IMAGE_REPOSITORY}:${DEFAULT_ASTERINAS_BASE_IMAGE##*:}"
           fi
 
           test -n "${image}"
