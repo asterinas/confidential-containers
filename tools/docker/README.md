@@ -44,7 +44,7 @@ The outer container must expose KVM/vsock devices, use host cgroups, and keep
 nydus on `tmpfs`. `/var/lib/containerd` is intentionally kept inside the image
 so the preloaded containerd content store and native snapshots can be reused at
 runtime. The image also preloads kubeadm images into `/var/lib/containerd` and
-stores OCI archives for kubeadm and `kata-deploy` images under `/opt/coco/cache`.
+stores OCI archives for kubeadm images under `/opt/coco/cache`.
 
 Recommended command:
 
@@ -85,6 +85,6 @@ The image already contains:
 - kubeadm config: `/opt/coco/kubeadm-coco-init.yaml`
 - CNI config template: `/opt/coco/10-bridge.conflist`
 - nydus config: `/opt/coco/nydus-config-proxy.toml`
-- Prebuilt OCI archives for kubeadm images and `kata-deploy` under `/opt/coco/cache/`
+- Prebuilt OCI archives for kubeadm images under `/opt/coco/cache/`
 - Preloaded kubeadm image records and native snapshots under `/var/lib/containerd`
 - Prebuilt Asterinas kernel/shim/initrd artifacts under `/opt/coco/prebuilt/asterinas-coco`

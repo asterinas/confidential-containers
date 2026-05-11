@@ -315,7 +315,6 @@ init_kubernetes() {
     write_kubeadm_config
     if ! kubeadm init \
         --config=/etc/kubeadm/coco-init.yaml \
-        --ignore-preflight-errors=all \
         >/tmp/kubeadm-init.log 2>&1; then
         tail -n 240 /tmp/kubeadm-init.log >&2 2>/dev/null || true
         tail -n 240 /tmp/kubelet.log >&2 2>/dev/null || true

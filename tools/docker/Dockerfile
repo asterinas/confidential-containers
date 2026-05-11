@@ -50,9 +50,7 @@ FROM ${ASTERINAS_BASE_IMAGE} AS build-bases
 SHELL ["/bin/bash", "-c"]
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG HELM_VERSION=3.20.0
 ARG K8S_VERSION=1.30.14
-ARG CRICTL_VERSION=1.30.0
 ARG CNI_PLUGINS_VERSION=1.6.2
 ARG NYDUS_SNAPSHOTTER_VERSION=v0.15.10
 ARG ASTERINAS_DOCKER_IMAGE_VERSION=
@@ -68,15 +66,12 @@ RUN apt update && apt-get install -y --no-install-recommends \
     containerd \
     curl \
     conntrack \
-    busybox-syslogd \
     ebtables \
     ethtool \
     fuse3 \
     iproute2 \
     iptables \
-    jq \
     kmod \
-    python3 \
     skopeo \
     socat \
     virtiofsd && \
@@ -88,20 +83,11 @@ RUN set -euo pipefail && \
     arch=amd64 && \
     curl_common=(--fail --show-error --silent --location --retry 10 --retry-delay 3 --retry-all-errors --connect-timeout 20 --speed-time 30 --speed-limit 1024) && \
     curl "${curl_common[@]}" \
-      "https://get.helm.sh/helm-v${HELM_VERSION}-linux-${arch}.tar.gz" \
-      | tar -xz -C /tmp && \
-    install -m 0755 "/tmp/linux-${arch}/helm" /usr/local/bin/helm && \
-    rm -rf "/tmp/linux-${arch}" && \
-    curl "${curl_common[@]}" \
       -o /usr/local/bin/kubeadm "https://dl.k8s.io/release/v${K8S_VERSION}/bin/linux/${arch}/kubeadm" && \
     curl "${curl_common[@]}" \
       -o /usr/local/bin/kubelet "https://dl.k8s.io/release/v${K8S_VERSION}/bin/linux/${arch}/kubelet" && \
     curl "${curl_common[@]}" \
       -o /usr/local/bin/kubectl "https://dl.k8s.io/release/v${K8S_VERSION}/bin/linux/${arch}/kubectl" && \
-    curl "${curl_common[@]}" \
-      -o /tmp/crictl.tgz "https://github.com/kubernetes-sigs/cri-tools/releases/download/v${CRICTL_VERSION}/crictl-v${CRICTL_VERSION}-linux-${arch}.tar.gz" && \
-    tar -xz -C /usr/local/bin -f /tmp/crictl.tgz && \
-    rm -f /tmp/crictl.tgz && \
     curl "${curl_common[@]}" \
       -o /tmp/cni.tgz "https://github.com/containernetworking/plugins/releases/download/v${CNI_PLUGINS_VERSION}/cni-plugins-linux-${arch}-v${CNI_PLUGINS_VERSION}.tgz" && \
     tar -xz -C /opt/cni/bin -f /tmp/cni.tgz && \
@@ -114,26 +100,18 @@ RUN set -euo pipefail && \
     install -m 0755 "$(find /tmp/nydus-snapshotter -type f -name nydus-overlayfs | head -n 1)" /opt/coco/nydus-snapshotter/nydus-overlayfs && \
     rm -rf /tmp/nydus-snapshotter /tmp/nydus-snapshotter.tgz
 
-RUN chmod 0755 /usr/local/bin/helm /usr/local/bin/kubeadm /usr/local/bin/kubelet /usr/local/bin/kubectl /usr/local/bin/crictl && \
+RUN chmod 0755 /usr/local/bin/kubeadm /usr/local/bin/kubelet /usr/local/bin/kubectl && \
     find /opt/cni/bin -type f -exec chmod 0755 {} + && \
     chmod 0755 /opt/coco/nydus-snapshotter/containerd-nydus-grpc /opt/coco/nydus-snapshotter/nydus-overlayfs
 
-RUN install -d /opt/coco/cache/kubeadm-images \
-    /opt/coco/cache/kata-deploy \
-    /opt/coco/cache/chart-images
+RUN install -d /opt/coco/cache/kubeadm-images
 
 RUN mapfile -t kubeadm_images < <(eval "${KUBEADM_IMAGE_LIST_CMD}") && \
     for image in "${kubeadm_images[@]}"; do \
         archive="/opt/coco/cache/kubeadm-images/$(echo "${image}" | sed 's|/|_|g; s|:|_|g').tar"; \
         skopeo copy --insecure-policy --override-os linux --override-arch amd64 \
             "docker://${image}" "docker-archive:${archive}:${image}"; \
-    done && \
-    skopeo copy --insecure-policy --override-os linux --override-arch amd64 \
-        "docker://quay.io/kata-containers/kata-deploy:3.28.0" \
-        "docker-archive:/opt/coco/cache/kata-deploy/kata-deploy-amd64.tar:quay.io/kata-containers/kata-deploy:3.28.0" && \
-    skopeo copy --insecure-policy --override-os linux --override-arch amd64 \
-        "docker://quay.io/kata-containers/kubectl:20260112" \
-        "docker-archive:/opt/coco/cache/chart-images/quay.io_kata-containers_kubectl_20260112.tar:quay.io/kata-containers/kubectl:20260112"
+    done
 
 RUN cat > /tmp/preload-containerd.sh <<'EOF' && bash /tmp/preload-containerd.sh && rm -f /tmp/preload-containerd.sh
 set -euo pipefail
@@ -191,8 +169,6 @@ COPY --from=fetch-release-assets /out/metadata/. /opt/coco/metadata/
 
 RUN install -m 0644 /opt/coco/config/containerd-coco-guest-pull.toml \
         /etc/containerd/conf.d/50-coco-guest-pull.toml && \
-    install -m 0644 /opt/coco/config/confidential-containers-values.yaml \
-        /opt/coco/confidential-containers-values.yaml && \
     install -m 0644 /opt/coco/config/kubeadm-coco-init.yaml /opt/coco/kubeadm-coco-init.yaml && \
     install -m 0644 /opt/coco/config/10-bridge.conflist /opt/coco/10-bridge.conflist && \
     install -m 0644 /opt/coco/config/nydus-config-proxy.toml /opt/coco/nydus-config-proxy.toml && \
