@@ -2,7 +2,7 @@ name: Test | Published Asterinas CoCo Image
 
 on:
   schedule:
-    - cron: "0 8 * * *"
+    - cron: "10 0 * * *"
   workflow_dispatch:
     inputs:
       image:
@@ -54,6 +54,16 @@ jobs:
           set -euo pipefail
           docker pull "${{ steps.resolve.outputs.image }}"
 
+      - name: Fetch Latest Asterinas Source
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ASTERINAS_SRC="${RUNNER_TEMP}/asterinas"
+          rm -rf "${ASTERINAS_SRC}"
+          git clone --depth 1 https://github.com/asterinas/asterinas "${ASTERINAS_SRC}"
+          echo "ASTERINAS_SRC=${ASTERINAS_SRC}" >> "${GITHUB_ENV}"
+
       - name: Start CoCo Dev Container
         shell: bash
         run: |
@@ -69,8 +79,28 @@ jobs:
             --device /dev/vhost-net \
             --device /dev/vhost-vsock \
             --tmpfs /var/lib/containerd-nydus:rw,size=512m \
+            -v "${ASTERINAS_SRC}:/root/asterinas" \
             "${{ steps.resolve.outputs.image }}" \
             sleep infinity
+
+      - name: Build Latest Asterinas Guest Kernel
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          docker exec coco-dev bash -lc '
+            set -euo pipefail
+
+            cd /root/asterinas
+            make kernel BOOT_METHOD=qemu-direct
+
+            kernel_path="/root/asterinas/target/osdk/aster-kernel-osdk-bin.qemu_elf"
+            test -f "${kernel_path}"
+
+            config="/opt/coco/config/configuration-qemu-coco-dev-asterinas.toml"
+            grep -q "^kernel = " "${config}"
+            sed -i "s|^kernel = .*|kernel = \"${kernel_path}\"|" "${config}"
+          '
 
       - name: Install CoCo Cluster
         shell: bash
