@@ -1,0 +1,128 @@
+name: Update | Asterinas Base Image
+
+on:
+  schedule:
+    - cron: "10 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-base-image:
+    name: Update default Asterinas base image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Update Default Base Image
+        id: update
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          upstream_version="$(
+            gh api "repos/asterinas/asterinas/contents/DOCKER_IMAGE_VERSION?ref=main" \
+              --jq .content |
+              base64 -d |
+              tr -d '[:space:]'
+          )"
+          test -n "${upstream_version}"
+
+          source ./tools/scripts/asterinas-coco-defaults.sh
+          current_version="${DEFAULT_ASTERINAS_BASE_IMAGE##*:}"
+
+          echo "upstream_version=${upstream_version}" >> "${GITHUB_OUTPUT}"
+          echo "current_version=${current_version}" >> "${GITHUB_OUTPUT}"
+
+          if [ "${upstream_version}" = "${current_version}" ]; then
+            echo "changed=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          sed -i \
+            's|^DEFAULT_ASTERINAS_BASE_IMAGE="asterinas/asterinas:[^"]*"|DEFAULT_ASTERINAS_BASE_IMAGE="asterinas/asterinas:'"${upstream_version}"'"|' \
+            tools/scripts/asterinas-coco-defaults.sh
+
+          git diff --check
+          echo "changed=true" >> "${GITHUB_OUTPUT}"
+
+      - name: Create Pull Request
+        if: ${{ steps.update.outputs.changed == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.UPDATE_BASE_IMAGE_TOKEN }}
+          FORK_OWNER: ${{ secrets.UPDATE_BASE_IMAGE_FORK_OWNER }}
+          UPSTREAM_VERSION: ${{ steps.update.outputs.upstream_version }}
+          CURRENT_VERSION: ${{ steps.update.outputs.current_version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          branch="ci/update-asterinas-base-image-${UPSTREAM_VERSION}"
+          title="Update DEFAULT_ASTERINAS_BASE_IMAGE to ${UPSTREAM_VERSION}"
+          body_file="$(mktemp)"
+          if [ -z "${FORK_OWNER}" ]; then
+            echo "UPDATE_BASE_IMAGE_FORK_OWNER is required" >&2
+            exit 1
+          fi
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "UPDATE_BASE_IMAGE_TOKEN is required" >&2
+            exit 1
+          fi
+          pr_head="${FORK_OWNER}:${branch}"
+          pr_url="https://github.com/${GITHUB_REPOSITORY}/compare/main...${FORK_OWNER}:${branch}?expand=1"
+
+          pr_number="$(
+            gh api "repos/${GITHUB_REPOSITORY}/pulls?state=open&base=main&per_page=100" \
+              --jq '.[] | select(.head.label == "'"${pr_head}"'") | .number' |
+              head -n 1
+          )"
+
+          if [ -n "${pr_number}" ]; then
+            echo "PR already exists: #${pr_number}"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "${branch}"
+          git add tools/scripts/asterinas-coco-defaults.sh
+          git commit -m "${title}"
+          gh auth setup-git
+          push_remote="https://github.com/${FORK_OWNER}/${GITHUB_REPOSITORY#*/}.git"
+          git push --force --no-thin \
+            "${push_remote}" \
+            "${branch}"
+
+          for _ in $(seq 1 30); do
+            if git ls-remote --exit-code --heads "${push_remote}" "${branch}" >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+
+          cat > "${body_file}" <<EOF
+          Update \`DEFAULT_ASTERINAS_BASE_IMAGE\` to match the latest Asterinas Docker image version.
+
+          - Current version: \`${CURRENT_VERSION}\`
+          - Upstream version: \`${UPSTREAM_VERSION}\`
+          - Upstream source: \`asterinas/asterinas@main:DOCKER_IMAGE_VERSION\`
+          EOF
+
+          pr_url="$(
+            gh pr create \
+              --repo "${GITHUB_REPOSITORY}" \
+              --head "${pr_head}" \
+              --base main \
+              --title "${title}" \
+              --body-file "${body_file}"
+          )"
+          echo "Created PR: ${pr_url}"
+          echo "Created PR: ${pr_url}" >> "${GITHUB_STEP_SUMMARY}"
