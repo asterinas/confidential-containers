@@ -121,7 +121,7 @@ start_rsyslog() {
         rm -f "${DEV_LOG_PID_FILE}"
     fi
 
-    rm -f /dev/log /tmp/dev-log.log /tmp/dev-log.stdout /tmp/logger-smoke.log
+    rm -f /dev/log /tmp/dev-log.log /tmp/dev-log.stdout
 
     log "starting /dev/log sink"
     nohup socat \
@@ -131,38 +131,17 @@ start_rsyslog() {
     dev_log_pid="$!"
     echo "${dev_log_pid}" > "${DEV_LOG_PID_FILE}"
 
-    if timeout 5 bash -c '
-        socket_path="$1"
-        process_id="$2"
-
-        while kill -0 "${process_id}" 2>/dev/null; do
-            if [ -S "${socket_path}" ]; then
-                exit 0
-            fi
-            sleep 0.05
-        done
-
-        exit 1
-    ' bash /dev/log "${dev_log_pid}" && \
-       kill -0 "${dev_log_pid}" 2>/dev/null; then
-        logger -t coco-syslog-smoke "syslog ready $(date +%s)" >/tmp/logger-smoke.log 2>&1 || true
-        return
-    fi
+    for _ in $(seq 1 100); do
+        if [ -S /dev/log ] && kill -0 "${dev_log_pid}" 2>/dev/null; then
+            return
+        fi
+        sleep 0.05
+    done
 
     echo "syslog readiness check failed" >&2
-    echo "===== ls -l /dev/log =====" >&2
     ls -l /dev/log >&2 2>/dev/null || true
-    echo "===== ss -xl | grep /dev/log =====" >&2
-    ss -xl >&2 2>/dev/null | grep -F '/dev/log' || true
-    echo "===== dev-log pid =====" >&2
-    cat "${DEV_LOG_PID_FILE}" >&2 2>/dev/null || true
-    echo "===== logger smoke test =====" >&2
-    logger -t coco-syslog-smoke "syslog failed $(date +%s)" >/tmp/logger-smoke.log 2>&1 || true
-    tail -n 240 /tmp/logger-smoke.log >&2 2>/dev/null || true
     echo "===== dev-log.stdout =====" >&2
     tail -n 240 /tmp/dev-log.stdout >&2 2>/dev/null || true
-    echo "===== dev-log.log =====" >&2
-    tail -n 240 /tmp/dev-log.log >&2 2>/dev/null || true
     echo "===== ps -ef | grep socat =====" >&2
     ps -ef | grep socat | grep -v grep >&2 || true
     exit 1
