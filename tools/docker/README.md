@@ -1,8 +1,12 @@
-# CoCo Development Docker Image
+# [Asterinas](https://github.com/asterinas/asterinas) CoCo Development Docker Image
 
-This directory contains the Docker image and bootstrap scripts for running
-`kubeadm + containerd + confidential-containers` inside a development
-container.
+This directory contains the Docker image and bootstrap scripts for running a
+Confidential Containers development environment with Asterinas as the guest
+kernel.
+
+The image runs `kubeadm + containerd + confidential-containers` inside a
+development container and bundles the Asterinas kernel, the customized Kata
+shim, and the CoCo initrd needed to launch Kata sandboxes backed by Asterinas.
 
 Layout:
 
@@ -12,10 +16,13 @@ Layout:
 
 ## Building The Image
 
-This image is built from:
+The Docker image is based on `asterinas/asterinas`. The concrete base image is
+controlled by the Docker build argument `ASTERINAS_BASE_IMAGE`. The repository
+default is `DEFAULT_ASTERINAS_BASE_IMAGE` in
+[`asterinas-coco-defaults.sh`](../scripts/asterinas-coco-defaults.sh).
 
-- the base image is provided through `ASTERINAS_BASE_IMAGE`
-  and the repository default is maintained in `tools/scripts/asterinas-coco-defaults.sh`
+The image also consumes:
+
 - the prebuilt Asterinas Kata artifacts come from an `asterinas/kata-containers` release package
 - the customized CoCo initrd comes from this repository's release package
 
@@ -37,6 +44,21 @@ DOCKER_BUILDKIT=1 docker build --progress=plain \
     -t asterinas/coco:<DOCKER_IMAGE_VERSION> \
     .
 ```
+
+If `ASTERINAS_BASE_IMAGE` is not provided explicitly by the caller, the helper
+scripts use `DEFAULT_ASTERINAS_BASE_IMAGE` from
+[`asterinas-coco-defaults.sh`](../scripts/asterinas-coco-defaults.sh).
+
+## Publishing The Image
+
+Our workflow for generating these Docker images is:
+
+1. The Asterinas main project version bumps.
+2. The new `asterinas/asterinas` Docker image generates.
+3. If this is a major release, trigger a new `asterinas/coco` release.
+4. After the Docker image generates successfully, submit a PR to update the
+   `asterinas/coco` Docker image version in the
+   [Asterinas Book](https://asterinas.github.io/book/kernel/vm-based-containers/coco.html).
 
 ## Starting The Container
 
