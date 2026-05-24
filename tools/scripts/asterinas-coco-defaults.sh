@@ -4,7 +4,7 @@ defaults_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 defaults_repo_root="$(cd "${defaults_script_dir}/../.." && pwd)"
 
 DEFAULT_IMAGE_REPOSITORY="asterinas/coco"
-DEFAULT_ASTERINAS_BASE_IMAGE="asterinas/asterinas:0.17.2-20260508"
+DEFAULT_ASTERINAS_BASE_IMAGE="asterinas/asterinas:0.17.2-20260523"
 DEFAULT_KATA_RELEASE_REPOSITORY="asterinas/kata-containers"
 DEFAULT_KATA_VERSION="3.28.0-20260529"
 
