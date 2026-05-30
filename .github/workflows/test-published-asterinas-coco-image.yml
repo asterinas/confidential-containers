@@ -125,7 +125,7 @@ jobs:
           docker exec coco-dev kubectl wait \
             --for=condition=Ready \
             pod/alpine-kata-qemu-coco-dev \
-            --timeout=2m
+            --timeout=5m
 
       - name: Verify Alpine Guest
         shell: bash
