@@ -142,6 +142,8 @@ jobs:
           file: tools/docker/Dockerfile
           build-contexts: |
             local_coco_release=/tmp/docker-build-contexts/local_coco_release
+          secret-files: |
+            coco_local_registry_ca=tools/docker/config/local-registry-certs/ca.crt
           platforms: linux/amd64
           load: ${{ steps.resolve.outputs.should_push != 'true' }}
           push: ${{ steps.resolve.outputs.should_push == 'true' }}
@@ -161,6 +163,7 @@ jobs:
             KATA_RELEASE_TAG=${{ steps.resolve.outputs.kata_release_tag }}
             KATA_RELEASE_PACKAGE_URL=${{ steps.resolve.outputs.kata_release_package_url }}
             COCO_RELEASE_PACKAGE_URL=${{ steps.resolve.outputs.coco_release_package_url }}
+            LOCAL_REGISTRY_HOSTS=172.17.0.1:5000
 
       - name: Verify Local Image Metadata
         if: ${{ steps.resolve.outputs.should_push != 'true' }}

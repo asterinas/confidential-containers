@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 # SPDX-License-Identifier: MPL-2.0
 
 ARG ASTERINAS_BASE_IMAGE
@@ -58,6 +59,7 @@ ARG COCO_RELEASE_VERSION=
 ARG KATA_RELEASE_TAG=
 ARG KATA_RELEASE_PACKAGE_URL=
 ARG COCO_RELEASE_PACKAGE_URL=
+ARG LOCAL_REGISTRY_HOSTS=""
 
 ENV KUBEADM_IMAGE_LIST_CMD="kubeadm config images list --kubernetes-version v${K8S_VERSION}"
 
@@ -175,6 +177,31 @@ RUN install -m 0644 /opt/coco/config/containerd/coco.toml \
         /opt/coco/prebuilt/asterinas-coco/aster-kernel-osdk-bin.qemu_elf \
         /opt/coco/prebuilt/asterinas-coco/aster-kernel-osdk-bin-tdx && \
     chmod 0644 /opt/coco/prebuilt/asterinas-coco/kata-containers-initrd.img
+
+RUN --mount=type=secret,id=coco_local_registry_ca,required=false \
+    set -euo pipefail && \
+    ca_secret="/run/secrets/coco_local_registry_ca" && \
+    if [ -s "${ca_secret}" ]; then \
+        if [ -z "${LOCAL_REGISTRY_HOSTS}" ]; then \
+            echo "LOCAL_REGISTRY_HOSTS must be set when coco_local_registry_ca is provided" >&2; \
+            exit 1; \
+        fi; \
+        install -d /usr/local/share/ca-certificates /etc/containerd/certs.d && \
+        install -m 0644 "${ca_secret}" /usr/local/share/ca-certificates/coco-local-registry-ca.crt && \
+        update-ca-certificates && \
+        for host in ${LOCAL_REGISTRY_HOSTS}; do \
+            cert_dir="/etc/containerd/certs.d/${host}"; \
+            install -d "${cert_dir}"; \
+            install -m 0644 "${ca_secret}" "${cert_dir}/ca.crt"; \
+            printf '%s\n' \
+                "server = \"https://${host}\"" \
+                "" \
+                "[host.\"https://${host}\"]" \
+                "  capabilities = [\"pull\", \"resolve\", \"push\"]" \
+                "  ca = \"${cert_dir}/ca.crt\"" \
+                > "${cert_dir}/hosts.toml"; \
+        done; \
+    fi
 
 RUN printf '%s\n' "${ASTERINAS_DOCKER_IMAGE_VERSION}" > /opt/coco/metadata/asterinas-docker-image-version && \
     printf '%s\n' "${COCO_RELEASE_VERSION}" > /opt/coco/metadata/coco-release-version && \
