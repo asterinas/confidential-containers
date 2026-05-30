@@ -95,7 +95,6 @@ prepare_host_config() {
         /opt/cni/bin
 
     mount_tmpfs_once /var/lib/containerd/tmpmounts 512m
-    mount_tmpfs_once /var/lib/containerd-nydus 512m
 
     install -m 0644 "${COCO_ROOT}/config/nydus/config-proxy.toml" /etc/nydus/config-proxy.toml
     install -m 0644 "${COCO_ROOT}/config/cni/10-bridge.conflist" /etc/cni/net.d/10-bridge.conflist

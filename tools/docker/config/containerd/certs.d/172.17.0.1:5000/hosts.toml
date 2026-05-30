@@ -1,0 +1,5 @@
+server = "https://172.17.0.1:5000"
+
+[host."https://172.17.0.1:5000"]
+  capabilities = ["pull", "resolve", "push"]
+  ca = "/etc/containerd/certs.d/172.17.0.1:5000/ca.crt"
