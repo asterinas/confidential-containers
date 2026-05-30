@@ -53,7 +53,6 @@ DOCKER_BUILDKIT=1 docker build --progress=plain \
     --build-arg ASTERINAS_BASE_IMAGE=asterinas/asterinas:<DOCKER_IMAGE_VERSION> \
     --build-arg KATA_RELEASE_PACKAGE_URL=<asterinas-kata-release-package-url> \
     --build-arg COCO_RELEASE_PACKAGE_URL=<confidential-containers-release-package-url> \
-    --build-arg LOCAL_REGISTRY_HOSTS="172.17.0.1:5000" \
     --secret id=coco_local_registry_ca,src=/path/to/local-registry-ca.crt \
     -t asterinas/coco:<DOCKER_IMAGE_VERSION>-local-registry \
     .
@@ -61,7 +60,12 @@ DOCKER_BUILDKIT=1 docker build --progress=plain \
 
 This installs the CA into the image trust store, appends it to the CoCo guest
 initrd CA bundle for guest image pulls, and writes containerd
-`certs.d/<host>/hosts.toml` entries for the listed registries. Keep this out of
+`certs.d` entries from
+[`config/containerd/certs.d`](config/containerd/certs.d). That directory
+configures `172.17.0.1:5000` as a trusted registry and as the `docker.io` mirror
+in both the outer container and the guest initrd. For example,
+`ollama/ollama:latest` is resolved as `docker.io/ollama/ollama:latest` and will
+be tried against `172.17.0.1:5000/ollama/ollama:latest` first. Keep this out of
 published images unless the CA is intentionally public.
 
 If `ASTERINAS_BASE_IMAGE` is not provided explicitly by the caller, the helper

@@ -59,13 +59,13 @@ ARG COCO_RELEASE_VERSION=
 ARG KATA_RELEASE_TAG=
 ARG KATA_RELEASE_PACKAGE_URL=
 ARG COCO_RELEASE_PACKAGE_URL=
-ARG LOCAL_REGISTRY_HOSTS=""
 
 ENV KUBEADM_IMAGE_LIST_CMD="kubeadm config images list --kubernetes-version v${K8S_VERSION}"
 
 RUN apt update && apt-get install -y --no-install-recommends \
     ca-certificates \
     containerd \
+    cpio \
     curl \
     conntrack \
     ebtables \
@@ -182,33 +182,26 @@ RUN --mount=type=secret,id=coco_local_registry_ca,required=false \
     set -euo pipefail && \
     ca_secret="/run/secrets/coco_local_registry_ca" && \
     if [ -s "${ca_secret}" ]; then \
-        if [ -z "${LOCAL_REGISTRY_HOSTS}" ]; then \
-            echo "LOCAL_REGISTRY_HOSTS must be set when coco_local_registry_ca is provided" >&2; \
-            exit 1; \
-        fi; \
         install -d /usr/local/share/ca-certificates /etc/containerd/certs.d && \
         install -m 0644 "${ca_secret}" /usr/local/share/ca-certificates/coco-local-registry-ca.crt && \
         update-ca-certificates && \
+        cp -a /opt/coco/config/containerd/certs.d/. /etc/containerd/certs.d/ && \
+        find /etc/containerd/certs.d -mindepth 1 -maxdepth 1 -type d \
+            -exec install -m 0644 "${ca_secret}" "{}/ca.crt" \; && \
         tmp_initrd="$(mktemp -d)" && \
         gzip -dc /opt/coco/prebuilt/asterinas-coco/kata-containers-initrd.img | (cd "${tmp_initrd}" && cpio -id --quiet) && \
-        install -d "${tmp_initrd}/etc/ssl/certs" "${tmp_initrd}/usr/local/share/ca-certificates" && \
+        install -d \
+            "${tmp_initrd}/etc/containerd/certs.d" \
+            "${tmp_initrd}/etc/ssl/certs" \
+            "${tmp_initrd}/usr/local/share/ca-certificates" && \
         install -m 0644 "${ca_secret}" "${tmp_initrd}/usr/local/share/ca-certificates/coco-local-registry-ca.crt" && \
         cat "${ca_secret}" >> "${tmp_initrd}/etc/ssl/certs/ca-certificates.crt" && \
+        cp -a /opt/coco/config/containerd/certs.d/. "${tmp_initrd}/etc/containerd/certs.d/" && \
+        find "${tmp_initrd}/etc/containerd/certs.d" -mindepth 1 -maxdepth 1 -type d \
+            -exec install -m 0644 "${ca_secret}" "{}/ca.crt" \; && \
         (cd "${tmp_initrd}" && find . -print0 | cpio --null -o --format=newc --quiet | gzip -9) \
             > /opt/coco/prebuilt/asterinas-coco/kata-containers-initrd.img && \
-        rm -rf "${tmp_initrd}" && \
-        for host in ${LOCAL_REGISTRY_HOSTS}; do \
-            cert_dir="/etc/containerd/certs.d/${host}"; \
-            install -d "${cert_dir}"; \
-            install -m 0644 "${ca_secret}" "${cert_dir}/ca.crt"; \
-            printf '%s\n' \
-                "server = \"https://${host}\"" \
-                "" \
-                "[host.\"https://${host}\"]" \
-                "  capabilities = [\"pull\", \"resolve\", \"push\"]" \
-                "  ca = \"${cert_dir}/ca.crt\"" \
-                > "${cert_dir}/hosts.toml"; \
-        done; \
+        rm -rf "${tmp_initrd}"; \
     fi
 
 RUN printf '%s\n' "${ASTERINAS_DOCKER_IMAGE_VERSION}" > /opt/coco/metadata/asterinas-docker-image-version && \

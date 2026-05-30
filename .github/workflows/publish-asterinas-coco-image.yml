@@ -163,7 +163,6 @@ jobs:
             KATA_RELEASE_TAG=${{ steps.resolve.outputs.kata_release_tag }}
             KATA_RELEASE_PACKAGE_URL=${{ steps.resolve.outputs.kata_release_package_url }}
             COCO_RELEASE_PACKAGE_URL=${{ steps.resolve.outputs.coco_release_package_url }}
-            LOCAL_REGISTRY_HOSTS=172.17.0.1:5000
 
       - name: Verify Local Image Metadata
         if: ${{ steps.resolve.outputs.should_push != 'true' }}

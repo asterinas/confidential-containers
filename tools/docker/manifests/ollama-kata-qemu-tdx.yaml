@@ -8,6 +8,6 @@ spec:
   runtimeClassName: kata-qemu-tdx-asterinas
   containers:
     - name: ollama
-      image: 172.17.0.1:5000/ollama/ollama-cpu:qwen2.5-0.5b
+      image: ollama/ollama-cpu:qwen2.5-0.5b
       imagePullPolicy: Always
       command: ["/usr/local/bin/pause"]
