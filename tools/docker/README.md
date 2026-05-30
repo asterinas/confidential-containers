@@ -59,7 +59,8 @@ DOCKER_BUILDKIT=1 docker build --progress=plain \
     .
 ```
 
-This installs the CA into the image trust store and writes containerd
+This installs the CA into the image trust store, appends it to the CoCo guest
+initrd CA bundle for guest image pulls, and writes containerd
 `certs.d/<host>/hosts.toml` entries for the listed registries. Keep this out of
 published images unless the CA is intentionally public.
 
