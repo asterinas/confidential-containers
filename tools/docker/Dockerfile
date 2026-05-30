@@ -189,6 +189,14 @@ RUN --mount=type=secret,id=coco_local_registry_ca,required=false \
         install -d /usr/local/share/ca-certificates /etc/containerd/certs.d && \
         install -m 0644 "${ca_secret}" /usr/local/share/ca-certificates/coco-local-registry-ca.crt && \
         update-ca-certificates && \
+        tmp_initrd="$(mktemp -d)" && \
+        gzip -dc /opt/coco/prebuilt/asterinas-coco/kata-containers-initrd.img | (cd "${tmp_initrd}" && cpio -id --quiet) && \
+        install -d "${tmp_initrd}/etc/ssl/certs" "${tmp_initrd}/usr/local/share/ca-certificates" && \
+        install -m 0644 "${ca_secret}" "${tmp_initrd}/usr/local/share/ca-certificates/coco-local-registry-ca.crt" && \
+        cat "${ca_secret}" >> "${tmp_initrd}/etc/ssl/certs/ca-certificates.crt" && \
+        (cd "${tmp_initrd}" && find . -print0 | cpio --null -o --format=newc --quiet | gzip -9) \
+            > /opt/coco/prebuilt/asterinas-coco/kata-containers-initrd.img && \
+        rm -rf "${tmp_initrd}" && \
         for host in ${LOCAL_REGISTRY_HOSTS}; do \
             cert_dir="/etc/containerd/certs.d/${host}"; \
             install -d "${cert_dir}"; \
