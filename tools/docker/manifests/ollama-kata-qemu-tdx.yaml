@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ollama-kata-qemu-tdx
+  annotations:
+    io.katacontainers.config.runtime.create_container_timeout: "3600"
+spec:
+  runtimeClassName: kata-qemu-tdx-asterinas
+  containers:
+    - name: ollama
+      image: 172.17.0.1:5000/ollama/ollama-cpu:qwen2.5-0.5b
+      imagePullPolicy: Always
+      command: ["/usr/local/bin/pause"]
