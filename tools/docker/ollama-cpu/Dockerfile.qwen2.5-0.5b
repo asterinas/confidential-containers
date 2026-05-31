@@ -1,0 +1,55 @@
+ARG OLLAMA_IMAGE=ollama/ollama:latest
+
+FROM ${OLLAMA_IMAGE} AS ollama
+
+FROM ubuntu:noble AS pause-builder
+
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends gcc libc6-dev \
+	&& rm -rf /var/lib/apt/lists/*
+
+RUN printf '%s\n' \
+	'#include <signal.h>' \
+	'#include <unistd.h>' \
+	'int main(void) { for (;;) { pause(); } }' \
+	| gcc -x c -Os -static -s -o /pause -
+
+FROM ubuntu:noble AS runtime
+
+COPY --from=pause-builder /pause /usr/local/bin/pause
+COPY --from=ollama /etc/ssl/certs /etc/ssl/certs
+COPY --from=ollama /usr/bin/ollama /usr/bin/ollama
+COPY --from=ollama /usr/lib/ollama/libggml-base.so.0.0.0 /usr/lib/ollama/
+COPY --from=ollama /usr/lib/ollama/libggml-cpu-alderlake.so /usr/lib/ollama/
+COPY --from=ollama /usr/lib/ollama/libggml-cpu-haswell.so /usr/lib/ollama/
+COPY --from=ollama /usr/lib/ollama/libggml-cpu-icelake.so /usr/lib/ollama/
+COPY --from=ollama /usr/lib/ollama/libggml-cpu-sandybridge.so /usr/lib/ollama/
+COPY --from=ollama /usr/lib/ollama/libggml-cpu-skylakex.so /usr/lib/ollama/
+COPY --from=ollama /usr/lib/ollama/libggml-cpu-sse42.so /usr/lib/ollama/
+COPY --from=ollama /usr/lib/ollama/libggml-cpu-x64.so /usr/lib/ollama/
+
+RUN mkdir -p /root/.ollama/models \
+	&& ln -s libggml-base.so.0.0.0 /usr/lib/ollama/libggml-base.so.0
+
+ENV LD_LIBRARY_PATH=/usr/lib/ollama
+ENV OLLAMA_HOST=127.0.0.1:11434
+
+FROM runtime AS model
+
+RUN /usr/bin/ollama serve >/tmp/ollama-build.log 2>&1 & \
+	pid="$!"; \
+	for i in $(seq 1 60); do \
+		/usr/bin/ollama list >/dev/null 2>&1 && break; \
+		sleep 1; \
+	done; \
+	/usr/bin/ollama pull qwen2.5:0.5b; \
+	kill "$pid"; \
+	wait "$pid" || true; \
+	rm -rf /root/.ollama/cache /tmp/ollama-build.log
+
+FROM runtime
+
+COPY --from=model /root/.ollama /root/.ollama
+
+ENTRYPOINT ["/usr/bin/ollama"]
+CMD ["serve"]
