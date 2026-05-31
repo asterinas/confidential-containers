@@ -6,6 +6,6 @@ spec:
   runtimeClassName: kata-qemu-tdx-asterinas
   containers:
     - name: ollama
-      image: asterinas/ollama-cpu:qwen2.5-0.5b
+      image: asterinas/ollama-cpu:openclaw-qwen2.5-0.5b
       imagePullPolicy: Always
       command: ["/usr/local/bin/pause"]
