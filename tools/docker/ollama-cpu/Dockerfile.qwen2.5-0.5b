@@ -15,9 +15,31 @@ RUN printf '%s\n' \
 	'int main(void) { for (;;) { pause(); } }' \
 	| gcc -x c -Os -static -s -o /pause -
 
+RUN printf '%s\n' \
+	'#include <stdio.h>' \
+	'#include <stdlib.h>' \
+	'#include <unistd.h>' \
+	'int main(int argc, char **argv) {' \
+	'    char **args = calloc((size_t)argc + 2, sizeof(char *));' \
+	'    if (args == NULL) {' \
+	'        perror("calloc");' \
+	'        return 127;' \
+	'    }' \
+	'    args[0] = "node";' \
+	'    args[1] = "/usr/lib/node_modules/openclaw/openclaw.mjs";' \
+	'    for (int i = 1; i < argc; i++) {' \
+	'        args[i + 1] = argv[i];' \
+	'    }' \
+	'    execv("/usr/bin/node", args);' \
+	'    perror("execv");' \
+	'    return 127;' \
+	'}' \
+	| gcc -x c -Os -static -s -o /openclaw -
+
 FROM ubuntu:noble AS runtime
 
 COPY --from=pause-builder /pause /usr/local/bin/pause
+COPY --from=pause-builder /openclaw /usr/local/bin/openclaw
 COPY --from=ollama /etc/ssl/certs /etc/ssl/certs
 COPY --from=ollama /usr/bin/ollama /usr/bin/ollama
 COPY --from=ollama /usr/lib/ollama/libggml-base.so.0.0.0 /usr/lib/ollama/
@@ -71,7 +93,6 @@ RUN apt-get update \
 		--fetch-retry-mintimeout=20000 \
 		--fetch-retry-maxtimeout=120000 \
 		"openclaw@${OPENCLAW_VERSION}" \
-	&& ln -sf /usr/lib/node_modules/openclaw/openclaw.mjs /usr/local/bin/openclaw \
 	&& npm cache clean --force \
 	&& apt-get purge -y --auto-remove curl gnupg \
 	&& rm -rf /var/lib/apt/lists/*
