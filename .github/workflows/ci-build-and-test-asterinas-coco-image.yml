@@ -195,6 +195,24 @@ jobs:
           docker builder prune -af || true
           docker buildx prune -af || true
 
+      - name: Enable Runner Swap
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if swapon --show=NAME --noheadings | grep -q .; then
+            swapon --show
+            free -h
+            exit 0
+          fi
+
+          sudo fallocate -l 8G /mnt/coco-ci.swap
+          sudo chmod 600 /mnt/coco-ci.swap
+          sudo mkswap /mnt/coco-ci.swap
+          sudo swapon /mnt/coco-ci.swap
+          swapon --show
+          free -h
+
       - name: Verify Local Image Metadata
         shell: bash
         run: |
@@ -223,7 +241,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker exec coco-dev /opt/coco/setup-coco-k8s.sh
+
+          if ! docker exec coco-dev /opt/coco/setup-coco-k8s.sh; then
+            docker inspect coco-dev --format 'OOMKilled={{.State.OOMKilled}} ExitCode={{.State.ExitCode}} Error={{.State.Error}}' || true
+            docker exec coco-dev sh -lc 'free -h; ps aux --sort=-rss | head -40' || true
+            dmesg | tail -100 || true
+            exit 1
+          fi
 
       - name: Run CoCo Demo
         shell: bash
