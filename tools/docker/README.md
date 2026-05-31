@@ -59,14 +59,15 @@ DOCKER_BUILDKIT=1 docker build --progress=plain \
 ```
 
 This installs the CA into the image trust store, appends it to the CoCo guest
-initrd CA bundle for guest image pulls, and writes containerd
-`certs.d` entries from
-[`config/containerd/certs.d`](config/containerd/certs.d). That directory
-configures `172.17.0.1:5000` as a trusted registry and as the `docker.io` mirror
-in both the outer container and the guest initrd. For example,
-`ollama/ollama:latest` is resolved as `docker.io/ollama/ollama:latest` and will
-be tried against `172.17.0.1:5000/ollama/ollama:latest` first. Keep this out of
-published images unless the CA is intentionally public.
+initrd CA bundle for guest image pulls, and writes containerd `certs.d` entries
+from [`config/containerd/certs.d`](config/containerd/certs.d) for the outer
+containerd. It also writes a CDH image-rs registry configuration from
+[`config/cdh`](config/cdh) into the guest initrd, so guest pulls resolve
+`docker.io` through `172.17.0.1:5000` first and fall back to Docker Hub if the
+mirror pull fails. For example, `ollama/ollama:latest` is resolved as
+`docker.io/ollama/ollama:latest` and will be tried against
+`172.17.0.1:5000/ollama/ollama:latest` first. Keep this out of published images
+unless the CA is intentionally public.
 
 If `ASTERINAS_BASE_IMAGE` is not provided explicitly by the caller, the helper
 scripts use `DEFAULT_ASTERINAS_BASE_IMAGE` from

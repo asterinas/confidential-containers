@@ -1,0 +1,8 @@
+socket = "unix:///run/confidential-containers/cdh.sock"
+
+[kbc]
+name = "offline_fs_kbc"
+url = "null"
+
+[image]
+registry_configuration_uri = "file:///etc/registry-configuration.toml"
