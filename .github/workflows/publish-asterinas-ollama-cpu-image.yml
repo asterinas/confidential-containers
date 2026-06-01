@@ -1,4 +1,4 @@
-name: Publish | Asterinas Ollama CPU Image
+name: Publish | Asterinas Ollama with Qwen Image
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
       image:
         description: Image reference to build and publish
         required: true
-        default: asterinas/ollama-cpu:openclaw-qwen2.5-0.5b
+        default: asterinas/ollama-with-qwen2.5:latest
         type: string
       ollama_image:
         description: Base Ollama image to copy the CPU runtime from
@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   publish-image:
-    name: Build and push Asterinas Ollama CPU image
+    name: Build and push Asterinas Ollama with Qwen image
     runs-on: ubuntu-latest
     steps:
       - name: Check Out Repository
@@ -36,7 +36,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          image="${WORKFLOW_IMAGE:-asterinas/ollama-cpu:openclaw-qwen2.5-0.5b}"
+          image="${WORKFLOW_IMAGE:-asterinas/ollama-with-qwen2.5:latest}"
           ollama_image="${WORKFLOW_OLLAMA_IMAGE:-ollama/ollama:latest}"
 
           test -n "${image}"
@@ -59,7 +59,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          build_context="${RUNNER_TEMP}/ollama-cpu-build-context"
+          build_context="${RUNNER_TEMP}/ollama-with-qwen-build-context"
           rm -rf "${build_context}"
           install -d "${build_context}"
           cp tools/docker/ollama-cpu/Dockerfile.qwen2.5-0.5b "${build_context}/Dockerfile"
@@ -68,8 +68,8 @@ jobs:
             --file "${build_context}/Dockerfile" \
             --tag "${{ steps.resolve.outputs.image }}" \
             --label "org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}" \
-            --label "org.opencontainers.image.description=Asterinas Ollama CPU image with OpenClaw and qwen2.5:0.5b preloaded" \
-            --label "org.opencontainers.image.version=openclaw-qwen2.5-0.5b" \
+            --label "org.opencontainers.image.description=Asterinas Ollama image with OpenClaw and qwen2.5:0.5b preloaded" \
+            --label "org.opencontainers.image.version=ollama-with-qwen2.5" \
             --label "org.opencontainers.image.base.name=${{ steps.resolve.outputs.ollama_image }}" \
             --build-arg "OLLAMA_IMAGE=${{ steps.resolve.outputs.ollama_image }}" \
             "${build_context}"
@@ -79,7 +79,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          container_name="ollama-cpu-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          container_name="ollama-with-qwen-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           docker rm -f "${container_name}" >/dev/null 2>&1 || true
           docker run -d \
             --rm \
@@ -121,7 +121,7 @@ jobs:
         shell: bash
         run: |
           {
-            echo '## Asterinas Ollama CPU image result'
+            echo '## Asterinas Ollama with Qwen image result'
             echo
             echo "- Image: \`${{ steps.resolve.outputs.image }}\`"
             echo "- Ollama base image: \`${{ steps.resolve.outputs.ollama_image }}\`"
@@ -133,4 +133,4 @@ jobs:
         if: always()
         shell: bash
         run: |
-          docker rm -f "ollama-cpu-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >/dev/null 2>&1 || true
+          docker rm -f "ollama-with-qwen-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >/dev/null 2>&1 || true

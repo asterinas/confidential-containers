@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: confidential-ai
+spec:
+  # Runtime: TDX-protected Confidential Container with Asterinas inside
+  runtimeClassName: kata-qemu-tdx-asterinas
+  containers:
+    - name: confidential-ai
+      # Image: ollama and Qwen preinstalled
+      image: asterinas/ollama-with-qwen2.5
+      imagePullPolicy: Always
+      command: ["/usr/local/bin/pause"]
