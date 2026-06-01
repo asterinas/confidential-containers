@@ -68,13 +68,13 @@ jobs:
             --file "${build_context}/Dockerfile" \
             --tag "${{ steps.resolve.outputs.image }}" \
             --label "org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}" \
-            --label "org.opencontainers.image.description=Asterinas Ollama image with OpenClaw and qwen2.5:0.5b preloaded" \
+            --label "org.opencontainers.image.description=Asterinas Ollama image with qwen2.5:0.5b preloaded" \
             --label "org.opencontainers.image.version=ollama-with-qwen2.5" \
             --label "org.opencontainers.image.base.name=${{ steps.resolve.outputs.ollama_image }}" \
             --build-arg "OLLAMA_IMAGE=${{ steps.resolve.outputs.ollama_image }}" \
             "${build_context}"
 
-      - name: Verify Preloaded Model and OpenClaw
+      - name: Verify Preloaded Model
         shell: bash
         run: |
           set -euo pipefail
@@ -95,13 +95,6 @@ jobs:
 
           cat /tmp/ollama-list.txt
           grep -Fq 'qwen2.5:0.5b' /tmp/ollama-list.txt
-
-          docker exec "${container_name}" openclaw --help >/tmp/openclaw-help.txt
-          docker exec "${container_name}" sh -lc \
-            'export OLLAMA_API_KEY=ollama-local; openclaw infer model run --local --model ollama/qwen2.5:0.5b --prompt "Reply with exactly: pong" --json' \
-            >/tmp/openclaw-run.json
-          cat /tmp/openclaw-run.json
-          grep -Fq '"ok": true' /tmp/openclaw-run.json
 
           docker rm -f "${container_name}" >/dev/null
 
@@ -126,7 +119,6 @@ jobs:
             echo "- Image: \`${{ steps.resolve.outputs.image }}\`"
             echo "- Ollama base image: \`${{ steps.resolve.outputs.ollama_image }}\`"
             echo "- Preloaded model: \`qwen2.5:0.5b\`"
-            echo "- OpenClaw: \`2026.5.27\`"
           } >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Stop Test Container
