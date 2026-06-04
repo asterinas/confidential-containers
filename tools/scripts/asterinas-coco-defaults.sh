@@ -6,7 +6,7 @@ defaults_repo_root="$(cd "${defaults_script_dir}/../.." && pwd)"
 DEFAULT_IMAGE_REPOSITORY="asterinas/coco"
 DEFAULT_ASTERINAS_BASE_IMAGE="asterinas/asterinas:0.18.0-20260603"
 DEFAULT_KATA_RELEASE_REPOSITORY="asterinas/kata-containers"
-DEFAULT_KATA_VERSION="3.28.0-20260603"
+DEFAULT_KATA_VERSION="3.28.0-20260604"
 
 VERSION="${VERSION:-$(<"${defaults_repo_root}/VERSION")}"
 
