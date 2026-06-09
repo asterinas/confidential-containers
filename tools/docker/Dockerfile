@@ -41,8 +41,11 @@ RUN set -euo pipefail && \
       test -n "${COCO_RELEASE_PACKAGE_URL}" && \
       curl "${curl_common[@]}" -o /tmp/coco-release.tar.gz "${COCO_RELEASE_PACKAGE_URL}"; \
     fi && \
-    tar -xzf /tmp/coco-release.tar.gz -C /tmp/coco ./artifacts/kata-containers-initrd.img && \
+    tar -xzf /tmp/coco-release.tar.gz -C /tmp/coco \
+      ./artifacts/kata-containers-initrd.img \
+      ./artifacts/kata-ubuntu-noble-confidential.image && \
     install -m 0644 /tmp/coco/artifacts/kata-containers-initrd.img /out/prebuilt/kata-containers-initrd.img && \
+    install -m 0644 /tmp/coco/artifacts/kata-ubuntu-noble-confidential.image /out/prebuilt/kata-ubuntu-noble-confidential.image && \
     printf '%s\n' "${KATA_RELEASE_PACKAGE_URL}" > /out/metadata/kata-release-package-url && \
     printf '%s\n' "${COCO_RELEASE_PACKAGE_URL}" > /out/metadata/coco-release-package-url
 
@@ -176,7 +179,8 @@ RUN install -m 0644 /opt/coco/config/containerd/coco.toml \
         /opt/coco/prebuilt/asterinas-coco/containerd-shim-kata-v2 \
         /opt/coco/prebuilt/asterinas-coco/aster-kernel-osdk-bin.qemu_elf \
         /opt/coco/prebuilt/asterinas-coco/aster-kernel-osdk-bin-tdx && \
-    chmod 0644 /opt/coco/prebuilt/asterinas-coco/kata-containers-initrd.img
+    chmod 0644 /opt/coco/prebuilt/asterinas-coco/kata-containers-initrd.img && \
+    chmod 0644 /opt/coco/prebuilt/asterinas-coco/kata-ubuntu-noble-confidential.image
 
 RUN --mount=type=secret,id=coco_local_registry_ca,required=false \
     set -euo pipefail && \

@@ -32,6 +32,7 @@ The image bakes in:
 - `/opt/coco/prebuilt/asterinas-coco/aster-kernel-osdk-bin-tdx`
 - `/opt/coco/prebuilt/asterinas-coco/containerd-shim-kata-v2`
 - `/opt/coco/prebuilt/asterinas-coco/kata-containers-initrd.img`
+- `/opt/coco/prebuilt/asterinas-coco/kata-ubuntu-noble-confidential.image`
 
 From this directory:
 
