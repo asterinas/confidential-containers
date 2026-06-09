@@ -28,7 +28,9 @@ KATA_SOURCE_DIR="${BUILD_ROOT}/src/kata-containers"
 KATA_ROOTFS_DIR="${BUILD_ROOT}/kata-rootfs"
 
 RELEASE_BASENAME="${RELEASE_BASENAME:-asterinas-coco-${VERSION}-${ARCHITECTURE}}"
+ROOTFS_IMAGE_NAME="${ROOTFS_IMAGE_NAME:-kata-ubuntu-noble-confidential.image}"
 CUSTOMIZED_INITRD_FILE="${DIST_DIR}/kata-containers-initrd.img"
+CUSTOMIZED_ROOTFS_IMAGE_FILE="${DIST_DIR}/${ROOTFS_IMAGE_NAME}"
 RELEASE_ASSET="${DIST_DIR}/${RELEASE_BASENAME}.tar.gz"
 MANIFEST_FILE="${DIST_DIR}/${RELEASE_BASENAME}.manifest.json"
 CHECKSUMS_FILE="${DIST_DIR}/${RELEASE_BASENAME}.SHA256SUMS"
@@ -130,6 +132,8 @@ write_manifest() {
   "kata_static_url": "${KATA_STATIC_URL}",
   "kata_static_asset_name": "${KATA_STATIC_ASSET_NAME}",
   "kata_initrd_path": "opt/kata/share/kata-containers/kata-containers-initrd.img",
+  "kata_rootfs_image_path": "opt/kata/share/kata-containers/${ROOTFS_IMAGE_NAME}",
+  "kata_rootfs_image_fs_type": "ext2",
   "guest_components_repository": "${GUEST_COMPONENTS_REPOSITORY}",
   "guest_components_ref": "${GUEST_COMPONENTS_REF}",
   "guest_components_commit": "${GUEST_COMPONENTS_COMMIT}",
@@ -161,6 +165,8 @@ write_release_notes() {
 - Kata release tag: [\`${KATA_RELEASE_TAG}\`](https://github.com/${KATA_RELEASE_REPOSITORY}/tree/${KATA_RELEASE_TAG})
 - Kata release package: [\`${KATA_STATIC_ASSET_NAME}\`](${KATA_STATIC_URL})
 - Kata initrd path: \`artifacts/kata-containers-initrd.img\`
+- Kata rootfs image path: \`artifacts/${ROOTFS_IMAGE_NAME}\`
+- Kata rootfs image filesystem: \`ext2\`
 - Guest Components commit: [\`${GUEST_COMPONENTS_COMMIT}\`](${GUEST_COMPONENTS_REPOSITORY}/commit/${GUEST_COMPONENTS_COMMIT})
 - Guest components paths inside initrd: \`/usr/local/bin/{confidential-data-hub, attestation-agent, api-server-rest}\`
 - Pause image: \`${PAUSE_IMAGE_REPOSITORY}:${PAUSE_IMAGE_VERSION}\`
@@ -202,6 +208,7 @@ rebuild_initrd() {
 	KATA_SOURCE_DIR="${KATA_SOURCE_DIR}" \
 	ROOTFS_DIR="${KATA_ROOTFS_DIR}" \
 	OUTPUT_INITRD_PATH="${CUSTOMIZED_INITRD_FILE}" \
+	OUTPUT_ROOTFS_IMAGE_PATH="${CUSTOMIZED_ROOTFS_IMAGE_FILE}" \
 	COCO_GUEST_COMPONENTS_TARBALL="${COCO_GUEST_COMPONENTS_TARBALL}" \
 	PAUSE_IMAGE_TARBALL="${PAUSE_IMAGE_TARBALL}" \
 	RESOLV_CONF_NAMESERVER="${RESOLV_CONF_NAMESERVER}" \
@@ -213,6 +220,7 @@ stage_release_tree() {
 	mkdir -p "${STAGING_DIR}/artifacts"
 
 	install -m 0644 "${CUSTOMIZED_INITRD_FILE}" "${STAGING_DIR}/artifacts/kata-containers-initrd.img"
+	install -m 0644 "${CUSTOMIZED_ROOTFS_IMAGE_FILE}" "${STAGING_DIR}/artifacts/${ROOTFS_IMAGE_NAME}"
 	install -m 0644 "${MANIFEST_FILE}" "${STAGING_DIR}/manifest.json"
 }
 
@@ -251,3 +259,4 @@ emit_output "manifest_file" "${MANIFEST_FILE}"
 emit_output "checksums_file" "${CHECKSUMS_FILE}"
 emit_output "release_notes" "${RELEASE_NOTES}"
 emit_output "kata_initrd" "${CUSTOMIZED_INITRD_FILE}"
+emit_output "kata_rootfs_image" "${CUSTOMIZED_ROOTFS_IMAGE_FILE}"

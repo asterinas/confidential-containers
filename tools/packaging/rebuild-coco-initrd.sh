@@ -14,10 +14,12 @@ source "${repo_root_dir}/tools/scripts/asterinas-coco-defaults.sh"
 KATA_SOURCE_DIR="${KATA_SOURCE_DIR:?KATA_SOURCE_DIR must be set}"
 ROOTFS_DIR="${ROOTFS_DIR:?ROOTFS_DIR must be set}"
 OUTPUT_INITRD_PATH="${OUTPUT_INITRD_PATH:?OUTPUT_INITRD_PATH must be set}"
+OUTPUT_ROOTFS_IMAGE_PATH="${OUTPUT_ROOTFS_IMAGE_PATH:-}"
 COCO_GUEST_COMPONENTS_TARBALL="${COCO_GUEST_COMPONENTS_TARBALL:?COCO_GUEST_COMPONENTS_TARBALL must be set}"
 PAUSE_IMAGE_TARBALL="${PAUSE_IMAGE_TARBALL:?PAUSE_IMAGE_TARBALL must be set}"
 DISTRO="${DISTRO:-ubuntu}"
 OS_VERSION="${OS_VERSION:-noble}"
+ROOTFS_IMAGE_BUILDER_PATCH="${ROOTFS_IMAGE_BUILDER_PATCH:-${script_dir}/patches/kata-image-builder-ext2.patch}"
 
 die() {
 	echo >&2 "ERROR: $*"
@@ -32,7 +34,7 @@ require_cmd() {
 	done
 }
 
-require_cmd install mkdir printf rm script sudo tee
+require_cmd git grep install mkdir printf rm script sudo tee
 
 [ -d "${KATA_SOURCE_DIR}" ] || die "KATA_SOURCE_DIR does not exist: ${KATA_SOURCE_DIR}"
 [ -f "${COCO_GUEST_COMPONENTS_TARBALL}" ] || die "COCO_GUEST_COMPONENTS_TARBALL does not exist: ${COCO_GUEST_COMPONENTS_TARBALL}"
@@ -45,6 +47,9 @@ export distro="${DISTRO}"
 
 sudo rm -rf "${ROOTFS_DIR}"
 mkdir -p "$(dirname "${OUTPUT_INITRD_PATH}")"
+if [ -n "${OUTPUT_ROOTFS_IMAGE_PATH}" ]; then
+	mkdir -p "$(dirname "${OUTPUT_ROOTFS_IMAGE_PATH}")"
+fi
 
 pushd "${KATA_SOURCE_DIR}/tools/osbuilder/rootfs-builder" >/dev/null
 script -q -e -c 'sudo -E AGENT_INIT=yes USE_DOCKER=true SECCOMP=no OS_VERSION='"${OS_VERSION}"' INIT_DATA=no CONFIDENTIAL_GUEST=yes ./rootfs.sh "'"${DISTRO}"'"' /dev/null
@@ -57,3 +62,15 @@ script -q -e -c 'sudo -E AGENT_INIT=yes USE_DOCKER=true SECCOMP=no INIT_DATA=no 
 popd >/dev/null
 
 install -m 0644 "${KATA_SOURCE_DIR}/tools/osbuilder/initrd-builder/kata-containers-initrd.img" "${OUTPUT_INITRD_PATH}"
+
+if [ -n "${OUTPUT_ROOTFS_IMAGE_PATH}" ]; then
+	[ -f "${ROOTFS_IMAGE_BUILDER_PATCH}" ] || die "ROOTFS_IMAGE_BUILDER_PATCH does not exist: ${ROOTFS_IMAGE_BUILDER_PATCH}"
+	if ! grep -q 'readonly ext2_format="ext2"' "${KATA_SOURCE_DIR}/tools/osbuilder/image-builder/image_builder.sh"; then
+		git -C "${KATA_SOURCE_DIR}" apply --check "${ROOTFS_IMAGE_BUILDER_PATCH}"
+		git -C "${KATA_SOURCE_DIR}" apply "${ROOTFS_IMAGE_BUILDER_PATCH}"
+	fi
+
+	pushd "${KATA_SOURCE_DIR}/tools/osbuilder/image-builder" >/dev/null
+	script -q -e -c 'sudo -E AGENT_INIT=yes USE_DOCKER=true SECCOMP=no INIT_DATA=no FS_TYPE=ext2 ./image_builder.sh -f ext2 -o "'"${OUTPUT_ROOTFS_IMAGE_PATH}"'" "'"${ROOTFS_DIR}"'"' /dev/null
+	popd >/dev/null
+fi

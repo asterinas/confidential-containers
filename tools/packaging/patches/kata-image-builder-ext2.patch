@@ -1,0 +1,46 @@
+diff --git a/tools/osbuilder/image-builder/image_builder.sh b/tools/osbuilder/image-builder/image_builder.sh
+index 7c849e4..faa59ae 100755
+--- a/tools/osbuilder/image-builder/image_builder.sh
++++ b/tools/osbuilder/image-builder/image_builder.sh
+@@ -30,6 +30,7 @@ readonly script_dir=$(dirname "$(readlink -f "$0")")
+ readonly lib_file="${script_dir}/../scripts/lib.sh"
+ 
+ readonly ext4_format="ext4"
++readonly ext2_format="ext2"
+ readonly xfs_format="xfs"
+ 
+ # ext4: percentage of the filesystem which may only be allocated by privileged processes.
+@@ -69,7 +70,7 @@ Options:
+ 	-h Show this help
+ 	-o Path to generate image file. ENV: IMAGE
+ 	-r Free space of the root partition in MB. ENV: ROOT_FREE_SPACE
+-	-f Filesystem type to use, only ext4, xfs and erofs are supported. ENV: FS_TYPE
++	-f Filesystem type to use, only ext2, ext4, xfs and erofs are supported. ENV: FS_TYPE
+ 
+ Extra environment variables:
+ 	AGENT_BIN:      Use it to change the expected agent binary name
+@@ -360,6 +361,13 @@ format_loop() {
+       return 0
+ 			;;
+ 
++		"${ext2_format}")
++			mkfs.ext2 -q -F -b "${block_size}" "${device}p1"
++			info "Set filesystem reserved blocks percentage to ${reserved_blocks_percentage}%"
++			tune2fs -m "${reserved_blocks_percentage}" "${device}p1"
++      return 0
++			;;
++
+ 		"${xfs_format}")
+ 			# DAX and reflink cannot be used together!
+ 			# Explicitly disable reflink, if it fails then reflink
+@@ -482,7 +490,9 @@ create_rootfs_image() {
+ 	umount "${mount_dir}"
+ 	OK "Root partition unmounted"
+ 
+-	if [ "${fs_type}" = "${ext4_format}" ]; then
++	if [ "${fs_type}" = "${ext2_format}" ]; then
++		fsck.ext2 -D -y "${device}p1"
++	elif [ "${fs_type}" = "${ext4_format}" ]; then
+ 		fsck.ext4 -D -y "${device}p1"
+ 	fi
+ 
