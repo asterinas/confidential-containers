@@ -200,7 +200,9 @@ RUN --mount=type=secret,id=coco_local_registry_ca,required=false \
             "${tmp_initrd}/usr/local/share/ca-certificates" && \
         install -m 0644 /opt/coco/config/cdh/confidential-data-hub.toml "${tmp_initrd}/etc/confidential-data-hub.toml" && \
         install -m 0644 /opt/coco/config/cdh/registry-configuration.toml "${tmp_initrd}/etc/registry-configuration.toml" && \
-        mv "${tmp_initrd}/usr/local/bin/confidential-data-hub" "${tmp_initrd}/usr/local/bin/confidential-data-hub.real" && \
+        if [ -f "${tmp_initrd}/usr/local/bin/confidential-data-hub" ] && [ ! -f "${tmp_initrd}/usr/local/bin/confidential-data-hub.real" ]; then \
+            mv "${tmp_initrd}/usr/local/bin/confidential-data-hub" "${tmp_initrd}/usr/local/bin/confidential-data-hub.real"; \
+        fi && \
         install -m 0755 /opt/coco/config/cdh/confidential-data-hub-wrapper.sh "${tmp_initrd}/usr/local/bin/confidential-data-hub" && \
         install -m 0644 "${ca_secret}" "${tmp_initrd}/usr/local/share/ca-certificates/coco-local-registry-ca.crt" && \
         cat "${ca_secret}" >> "${tmp_initrd}/etc/ssl/certs/ca-certificates.crt" && \
