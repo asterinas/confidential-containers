@@ -139,6 +139,24 @@ jobs:
             umoci \
             zstd
 
+      - name: Enable Runner Swap
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if swapon --show=NAME --noheadings | grep -q .; then
+            swapon --show
+            free -h
+            exit 0
+          fi
+
+          sudo fallocate -l 8G /mnt/coco-ci.swap
+          sudo chmod 600 /mnt/coco-ci.swap
+          sudo mkswap /mnt/coco-ci.swap
+          sudo swapon /mnt/coco-ci.swap
+          swapon --show
+          free -h
+
       - name: Build Local CoCo Release Asset
         if: ${{ steps.changes.outputs.should_build_local_release == 'true' }}
         id: local-release
@@ -194,24 +212,6 @@ jobs:
           set -euo pipefail
           docker builder prune -af || true
           docker buildx prune -af || true
-
-      - name: Enable Runner Swap
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if swapon --show=NAME --noheadings | grep -q .; then
-            swapon --show
-            free -h
-            exit 0
-          fi
-
-          sudo fallocate -l 8G /mnt/coco-ci.swap
-          sudo chmod 600 /mnt/coco-ci.swap
-          sudo mkswap /mnt/coco-ci.swap
-          sudo swapon /mnt/coco-ci.swap
-          swapon --show
-          free -h
 
       - name: Verify Local Image Metadata
         shell: bash
