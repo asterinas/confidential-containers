@@ -202,6 +202,11 @@ ensure_preloaded_images() {
             fi
             ctr -n k8s.io images import --all-platforms "${archive}" >/tmp/ctr-import.log 2>&1
         fi
+        if ! image_exists "${image}"; then
+            echo "missing preloaded kubeadm image: ${image}" >&2
+            echo "the CoCo image should include kubeadm images in /var/lib/containerd" >&2
+            exit 1
+        fi
     done
 
     unpack_marker="/var/lib/containerd/.coco-kubeadm-native-unpack.$(printf '%s\n' "${KUBEADM_IMAGES[@]}" | sha256sum | awk '{print $1}')"

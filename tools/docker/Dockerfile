@@ -108,22 +108,13 @@ RUN chmod 0755 /usr/local/bin/kubeadm /usr/local/bin/kubelet /usr/local/bin/kube
     find /opt/cni/bin -type f -exec chmod 0755 {} + && \
     chmod 0755 /opt/coco/nydus-snapshotter/containerd-nydus-grpc /opt/coco/nydus-snapshotter/nydus-overlayfs
 
-RUN install -d /opt/coco/cache/kubeadm-images
-
-RUN mapfile -t kubeadm_images < <(eval "${KUBEADM_IMAGE_LIST_CMD}") && \
-    for image in "${kubeadm_images[@]}"; do \
-        archive="/opt/coco/cache/kubeadm-images/$(echo "${image}" | sed 's|/|_|g; s|:|_|g').tar"; \
-        skopeo copy --insecure-policy --override-os linux --override-arch amd64 \
-            "docker://${image}" "docker-archive:${archive}:${image}"; \
-    done
-
 RUN cat > /tmp/preload-containerd.sh <<'EOF' && bash /tmp/preload-containerd.sh && rm -f /tmp/preload-containerd.sh
 set -euo pipefail
 
 mapfile -t kubeadm_images < <(eval "${KUBEADM_IMAGE_LIST_CMD}")
 
 rm -rf /var/lib/containerd /run/containerd
-mkdir -p /var/lib/containerd/tmpmounts /run/containerd
+mkdir -p /var/lib/containerd/tmpmounts /run/containerd /tmp/kubeadm-images
 
 containerd >/tmp/containerd-build-preload.log 2>&1 &
 containerd_pid="$!"
@@ -138,8 +129,11 @@ done
 ctr version
 
 for image in "${kubeadm_images[@]}"; do
-    archive="/opt/coco/cache/kubeadm-images/$(echo "${image}" | sed 's|/|_|g; s|:|_|g').tar"
+    archive="/tmp/kubeadm-images/$(echo "${image}" | sed 's|/|_|g; s|:|_|g').tar"
+    skopeo copy --insecure-policy --override-os linux --override-arch amd64 \
+        "docker://${image}" "docker-archive:${archive}:${image}"
     ctr -n k8s.io images import --all-platforms --no-unpack "${archive}"
+    rm -f "${archive}"
 done
 
 for image in "${kubeadm_images[@]}"; do
@@ -154,7 +148,7 @@ ctr -n k8s.io images ls | tee /tmp/containerd-preloaded-images.txt
 kill "${containerd_pid}" >/dev/null 2>&1 || true
 wait "${containerd_pid}" 2>/dev/null || true
 trap - EXIT
-rm -rf /run/containerd /opt/containerd /tmp/containerd-build-preload.log /tmp/containerd-preloaded-images.txt
+rm -rf /run/containerd /opt/containerd /tmp/containerd-build-preload.log /tmp/containerd-preloaded-images.txt /tmp/kubeadm-images
 EOF
 
 RUN install -d /etc/containerd/conf.d \

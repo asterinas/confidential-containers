@@ -89,9 +89,9 @@ Our workflow for generating these Docker images is:
 
 The outer container must expose KVM/vsock devices, use host cgroups, and keep
 nydus on `tmpfs`. `/var/lib/containerd` is intentionally kept inside the image
-so the preloaded containerd content store and native snapshots can be reused at
-runtime. The image also preloads kubeadm images into `/var/lib/containerd` and
-stores OCI archives for kubeadm images under `/opt/coco/cache`.
+so the preloaded containerd content store can be reused at runtime. The image
+preloads kubeadm images into `/var/lib/containerd` during the Docker build, so
+cluster bootstrap does not need to pull them again.
 
 Recommended command:
 
@@ -132,6 +132,5 @@ The image already contains:
 - kubeadm config: `/opt/coco/config/kubeadm/coco-init.yaml`
 - CNI config template: `/opt/coco/config/cni/10-bridge.conflist`
 - nydus config: `/opt/coco/config/nydus/config-proxy.toml`
-- Prebuilt OCI archives for kubeadm images under `/opt/coco/cache/`
-- Preloaded kubeadm image records and native snapshots under `/var/lib/containerd`
+- Preloaded kubeadm image records under `/var/lib/containerd`
 - Prebuilt Asterinas kernel/shim/initrd artifacts under `/opt/coco/prebuilt/asterinas-coco`
