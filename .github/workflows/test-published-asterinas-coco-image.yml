@@ -120,7 +120,7 @@ jobs:
             cd /root/asterinas
             make kernel BOOT_METHOD=qemu-direct
 
-            kernel_path="/root/asterinas/target/osdk/aster-kernel-osdk-bin.qemu_elf"
+            kernel_path="/root/asterinas/target/osdk/asterinas-osdk-bin.qemu_elf"
             test -f "${kernel_path}"
 
             config="/opt/coco/config/configuration-qemu-coco-dev-asterinas.toml"
@@ -156,7 +156,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          kernel_path="/root/asterinas/target/osdk/aster-kernel-osdk-bin.qemu_elf"
+          kernel_path="/root/asterinas/target/osdk/asterinas-osdk-bin.qemu_elf"
           guest_cmdline="$(
             docker exec coco-dev kubectl exec alpine-kata-qemu-coco-dev -- cat /proc/cmdline
           )"
