@@ -4,7 +4,7 @@ defaults_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 defaults_repo_root="$(cd "${defaults_script_dir}/../.." && pwd)"
 
 DEFAULT_IMAGE_REPOSITORY="asterinas/coco"
-DEFAULT_ASTERINAS_BASE_IMAGE="asterinas/asterinas:0.18.0-20260702"
+DEFAULT_ASTERINAS_BASE_IMAGE="asterinas/asterinas:0.18.1-20260901"
 
 VERSION="${VERSION:-$(<"${defaults_repo_root}/VERSION")}"
 
