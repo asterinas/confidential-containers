@@ -16,7 +16,7 @@ Layout:
 
 ## Building The Image
 
-The Docker image is based on `asterinas/asterinas`. The concrete base image is
+The Docker image is based on `asterinas/kernel-dev`. The concrete base image is
 controlled by the Docker build argument `ASTERINAS_BASE_IMAGE`. The repository
 default is `DEFAULT_ASTERINAS_BASE_IMAGE` in
 [`asterinas-coco-defaults.sh`](../scripts/asterinas-coco-defaults.sh).
@@ -39,7 +39,7 @@ From this directory:
 ```bash
 cd tools/docker
 DOCKER_BUILDKIT=1 docker build --progress=plain \
-    --build-arg ASTERINAS_BASE_IMAGE=asterinas/asterinas:<DOCKER_IMAGE_VERSION> \
+    --build-arg ASTERINAS_BASE_IMAGE=asterinas/kernel-dev:<DOCKER_IMAGE_VERSION> \
     --build-arg KATA_RELEASE_PACKAGE_URL=<asterinas-kata-release-package-url> \
     --build-arg COCO_RELEASE_PACKAGE_URL=<confidential-containers-release-package-url> \
     -t asterinas/coco:<DOCKER_IMAGE_VERSION> \
@@ -51,7 +51,7 @@ registry CA as a BuildKit secret and list the registry host:port values:
 
 ```bash
 DOCKER_BUILDKIT=1 docker build --progress=plain \
-    --build-arg ASTERINAS_BASE_IMAGE=asterinas/asterinas:<DOCKER_IMAGE_VERSION> \
+    --build-arg ASTERINAS_BASE_IMAGE=asterinas/kernel-dev:<DOCKER_IMAGE_VERSION> \
     --build-arg KATA_RELEASE_PACKAGE_URL=<asterinas-kata-release-package-url> \
     --build-arg COCO_RELEASE_PACKAGE_URL=<confidential-containers-release-package-url> \
     --secret id=coco_local_registry_ca,src=/path/to/local-registry-ca.crt \
@@ -79,7 +79,7 @@ scripts use `DEFAULT_ASTERINAS_BASE_IMAGE` from
 Our workflow for generating these Docker images is:
 
 1. The Asterinas main project version bumps.
-2. The new `asterinas/asterinas` Docker image generates.
+2. The new `asterinas/kernel-dev` Docker image generates.
 3. If this is a major release, trigger a new `asterinas/coco` release.
 4. After the Docker image generates successfully, submit a PR to update the
    `asterinas/coco` Docker image version in the

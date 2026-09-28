@@ -48,7 +48,7 @@ jobs:
           fi
 
           sed -i \
-            's|^DEFAULT_ASTERINAS_BASE_IMAGE="asterinas/asterinas:[^"]*"|DEFAULT_ASTERINAS_BASE_IMAGE="asterinas/asterinas:'"${upstream_version}"'"|' \
+            's|^DEFAULT_ASTERINAS_BASE_IMAGE="asterinas/kernel-dev:[^"]*"|DEFAULT_ASTERINAS_BASE_IMAGE="asterinas/kernel-dev:'"${upstream_version}"'"|' \
             tools/scripts/asterinas-coco-defaults.sh
 
           git diff --check
